@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400&family=Manrope:wght@400;600;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@400,0..1&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --header-h: calc(48px + var(--safe-top));
+    --ctrl-h: 130px;
+
+    /* Paleta global */
+    --bg:         #12110f;
+    --on-surface: #e8e4dc;
+    --divider:    rgba(232,228,220,0.08);
+
+    /* Nosotros — terracota suave */
+    --n-bg:      #2a1612;
+    --n-accent:  #c97b6a;
+    --n-muted:   rgba(180,90,75,0.18);
+    --n-glow:    rgba(200,100,80,0.45);
+    --n-stick:   #a85c4a;
+    --n-btn:     #b86450;
+
+    /* Ellos — verde salvia */
+    --e-bg:      #111d16;
+    --e-accent:  #6a9e7f;
+    --e-muted:   rgba(80,150,100,0.18);
+    --e-glow:    rgba(90,160,110,0.4);
+    --e-stick:   #4e8060;
+    --e-btn:     #557a63;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    background: var(--bg);
+    color: var(--on-surface);
+    font-family: 'Manrope', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* ── Header ── */
+  header {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+    height: var(--header-h);
+    padding: var(--safe-top) 1rem 0;
+    display: flex; align-items: center; justify-content: space-between;
+    background: rgba(18,17,15,0.96);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    border-bottom: 1px solid var(--divider);
+  }
+  header h1 {
+    font-family: 'Noto Serif', serif;
+    font-size: 1.1rem;
+    letter-spacing: .38em;
+    text-transform: uppercase;
+    color: var(--on-surface);
+    font-weight: 400;
+    opacity: .88;
+  }
+  .icon-btn {
+    background: none; border: none; cursor: pointer;
+    color: rgba(232,228,220,0.4);
+    width: 44px; height: 44px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    -webkit-user-select: none; user-select: none;
+    transition: color .2s;
+  }
+  .icon-btn:active { color: var(--on-surface); transform: scale(.9); }
+
+  /* ── Arena ── */
+  main {
+    position: fixed;
+    top: var(--header-h); bottom: var(--ctrl-h);
+    left: 0; right: 0;
+    display: grid;
+    grid-template-columns: 1fr 1px 1fr;
+    overflow: hidden;
+  }
+
+  .divider { background: var(--divider); }
+
+  /* ── Team columns ── */
+  .team-col {
+    display: flex; flex-direction: column;
+    align-items: center;
+    padding: .55rem .45rem;
+    overflow: hidden;
+    transition: background .8s ease;
+  }
+  #col-n { background: var(--n-bg); }
+  #col-e { background: var(--e-bg); }
+
+  #col-n.near-win { background: #3a1c16; }
+  #col-e.near-win { background: #152518; }
+
+  /* Score */
+  .score-block {
+    display: flex; flex-direction: column; align-items: center;
+    padding-bottom: .32rem; margin-bottom: .32rem;
+    border-bottom: 1px solid var(--divider);
+    width: 100%; flex-shrink: 0;
+  }
+  .team-label {
+    font-size: .56rem; font-weight: 800;
+    letter-spacing: .22em; text-transform: uppercase;
+  }
+  #col-n .team-label { color: var(--n-accent); opacity: .75; }
+  #col-e .team-label { color: var(--e-accent); opacity: .75; }
+
+  .score-num {
+    font-family: 'Noto Serif', serif;
+    font-size: 2.6rem; line-height: 1;
+    font-style: italic;
+    transition: text-shadow .6s;
+  }
+  #col-n .score-num { color: var(--n-accent); }
+  #col-e .score-num { color: var(--e-accent); }
+
+  .score-num.pop { animation: pop .22s ease-out; }
+  @keyframes pop {
+    0%   { transform: scale(1); }
+    45%  { transform: scale(1.3); }
+    100% { transform: scale(1); }
+  }
+
+  #col-n.near-win .score-num { text-shadow: 0 0 32px var(--n-glow); }
+  #col-e.near-win .score-num { text-shadow: 0 0 32px var(--e-glow); }
+  #col-n.near-win .mbox-svg  { filter: drop-shadow(0 0 4px var(--n-accent)); }
+  #col-e.near-win .mbox-svg  { filter: drop-shadow(0 0 4px var(--e-accent)); }
+
+  /* Section labels */
+  .section-label {
+    font-size: .52rem; font-weight: 800;
+    letter-spacing: .22em; text-transform: uppercase;
+    align-self: flex-start; padding-left: 2px;
+    flex-shrink: 0; margin-bottom: .2rem;
+    transition: opacity .4s;
+  }
+  #col-n .section-label { color: var(--n-accent); opacity: .4; }
+  #col-e .section-label { color: var(--e-accent); opacity: .4; }
+  #col-n.near-win .section-label { opacity: .7; }
+  #col-e.near-win .section-label { opacity: .7; }
+
+  .matches-col {
+    display: flex; flex-direction: column;
+    align-items: center; gap: .3rem;
+    flex-shrink: 0; margin-bottom: .3rem;
+    transition: opacity .4s;
+  }
+  .buenas-dim     { opacity: .15; pointer-events: none; }
+  .buenas-lbl-dim { opacity: .15 !important; }
+
+  /* ── Controls ── */
+  .controls {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: var(--ctrl-h);
+    display: grid; grid-template-columns: 1fr 1fr;
+    background: rgba(18,17,15,0.96);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    border-top: 1px solid var(--divider);
+    padding-bottom: var(--safe-bottom);
+  }
+  .ctrl-side {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: .5rem; padding: .5rem;
+  }
+  .ctrl-side + .ctrl-side { border-left: 1px solid var(--divider); }
+
+  .btn-add {
+    width: 64px; height: 64px; border-radius: 50%; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; letter-spacing: 0;
+    -webkit-user-select: none; user-select: none;
+    transition: transform .12s, box-shadow .3s;
+  }
+  .btn-add:active { transform: scale(.86) !important; }
+  .btn-add.n { background: var(--n-btn); box-shadow: 0 4px 20px var(--n-glow); }
+  .btn-add.e { background: var(--e-btn); box-shadow: 0 4px 20px var(--e-glow); }
+  .btn-add.scored { animation: addpop .26s ease-out; }
+  @keyframes addpop {
+    0%   { transform: scale(1); }
+    35%  { transform: scale(.84); }
+    65%  { transform: scale(1.12); }
+    100% { transform: scale(1); }
+  }
+
+  .secondary-btns { display: flex; gap: .5rem; }
+  .btn-sec {
+    width: 42px; height: 42px; border-radius: 50%; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    -webkit-user-select: none; user-select: none;
+    transition: transform .12s, background .2s;
+    background: rgba(232,228,220,0.05);
+    color: rgba(232,228,220,.38);
+  }
+  .btn-sec:active { transform: scale(.86); background: rgba(232,228,220,0.1); }
+  .btn-undo-n { background: var(--n-muted); color: var(--n-accent); opacity: .8; }
+  .btn-undo-e { background: var(--e-muted); color: var(--e-accent); opacity: .8; }
+
+  /* ── Modal ── */
+  .modal-backdrop {
+    position: fixed; inset: 0; z-index: 100;
+    background: rgba(10,9,8,.92);
+    backdrop-filter: blur(32px);
+    -webkit-backdrop-filter: blur(32px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 1.5rem;
+    opacity: 0; pointer-events: none;
+    transition: opacity .4s;
+  }
+  .modal-backdrop.show { opacity: 1; pointer-events: all; }
+  .modal-card {
+    border-radius: 20px; padding: 2.75rem 2rem;
+    text-align: center; max-width: 290px; width: 100%;
+    transform: scale(.9) translateY(12px);
+    transition: transform .4s cubic-bezier(.34,1.56,.64,1);
+    border: 1px solid rgba(232,228,220,0.08);
+  }
+  .modal-card.winner-n { background: #2a1612; }
+  .modal-card.winner-e { background: #111d16; }
+  .modal-backdrop.show .modal-card { transform: scale(1) translateY(0); }
+
+  .modal-trophy { font-size: 4.5rem; display: block; margin-bottom: .75rem; }
+  .modal-backdrop.show .modal-trophy { animation: trophy .5s .2s cubic-bezier(.34,1.56,.64,1) both; }
+  @keyframes trophy {
+    from { transform: scale(.3) rotate(-12deg); opacity: 0; }
+    to   { transform: scale(1) rotate(0); opacity: 1; }
+  }
+
+  .modal-title {
+    font-family: 'Noto Serif', serif;
+    font-size: 2.4rem; font-style: italic;
+    text-transform: uppercase; letter-spacing: -.01em;
+    color: var(--on-surface); margin: .2rem 0 .4rem;
+    font-weight: 400;
+  }
+  .modal-sub {
+    font-size: .68rem; letter-spacing: .18em;
+    text-transform: uppercase;
+    margin-bottom: 2rem; opacity: .55;
+    color: var(--on-surface);
+  }
+  .btn-restart {
+    width: 100%; border: none; cursor: pointer;
+    font-family: 'Manrope', sans-serif; font-weight: 800;
+    font-size: .75rem; letter-spacing: .16em; text-transform: uppercase;
+    padding: .9rem; border-radius: 999px; color: #fff;
+    transition: transform .12s;
+  }
+  .btn-restart.winner-n { background: var(--n-btn); }
+  .btn-restart.winner-e { background: var(--e-btn); }
+  .btn-restart:active { transform: scale(.96); }
+</style>
+</head>
+<body>
+
+<header>
+  <button class="icon-btn" aria-label="Menú">
+    <span class="material-symbols-outlined">menu</span>
+  </button>
+  <h1>Truco</h1>
+  <button class="icon-btn" aria-label="Reiniciar" onclick="resetGame()">
+    <span class="material-symbols-outlined">history</span>
+  </button>
+</header>
+
+<main>
+  <div class="team-col" id="col-n"></div>
+  <div class="divider"></div>
+  <div class="team-col" id="col-e"></div>
+</main>
+
+<div class="controls">
+  <div class="ctrl-side">
+    <button class="btn-add n" id="btn-add-n" aria-label="Sumar a Nosotros" onclick="updateScore('n',1)">
+      <span class="material-symbols-outlined" style="font-size:1.9rem">add</span>
+    </button>
+    <div class="secondary-btns">
+      <button class="btn-sec btn-undo-n" aria-label="Deshacer" onclick="undoLast('n')">
+        <span class="material-symbols-outlined" style="font-size:1.15rem">undo</span>
+      </button>
+      <button class="btn-sec" aria-label="Restar" onclick="updateScore('n',-1)">
+        <span class="material-symbols-outlined" style="font-size:1.15rem">remove</span>
+      </button>
+    </div>
+  </div>
+  <div class="ctrl-side">
+    <button class="btn-add e" id="btn-add-e" aria-label="Sumar a Ellos" onclick="updateScore('e',1)">
+      <span class="material-symbols-outlined" style="font-size:1.9rem">add</span>
+    </button>
+    <div class="secondary-btns">
+      <button class="btn-sec btn-undo-e" aria-label="Deshacer" onclick="undoLast('e')">
+        <span class="material-symbols-outlined" style="font-size:1.15rem">undo</span>
+      </button>
+      <button class="btn-sec" aria-label="Restar" onclick="updateScore('e',-1)">
+        <span class="material-symbols-outlined" style="font-size:1.15rem">remove</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="winner-modal" role="dialog" aria-modal="true">
+  <div class="modal-card" id="winner-card">
+    <span class="modal-trophy">🏆</span>
+    <h2 class="modal-title" id="winner-title">¡Ganaron!</h2>
+    <p class="modal-sub" id="winner-sub"></p>
+    <button class="btn-restart" id="btn-restart" onclick="resetGame()">Reiniciar Partida</button>
+  </div>
+</div>
+
+<script>
+  let scores = { n: 0, e: 0 };
+  let hist = [];
+
+  function getBoxSize() {
+    const headerH = 48 + 44; // approx with safe area
+    const ctrlH   = 130;
+    const arenaH  = window.innerHeight - headerH - ctrlH;
+    const colW    = window.innerWidth / 2 - 16;
+    const fixedH  = 72 + 32;
+    const gapsH   = 7 * 0.3 * 16;
+    const availH  = arenaH - fixedH - gapsH;
+    const byH     = Math.floor(availH / 6);
+    return Math.max(26, Math.min(byH, colW, 76));
+  }
+
+  function buildBoxSVG(count, team, S) {
+    const M  = S * 0.18;
+    const T  = Math.max(2.5, S * 0.08);
+    const HR = Math.max(2, S * 0.07);
+    const color = team === 'n' ? '#a85c4a' : '#4e8060';
+
+    const STICKS = [
+      [M,   M,   S-M, M  ],
+      [S-M, M,   S-M, S-M],
+      [S-M, S-M, M,   S-M],
+      [M,   S-M, M,   M  ],
+      [S-M, M,   M,   S-M],
+    ];
+
+    function stick(x1,y1,x2,y2) {
+      const dx=x2-x1, dy=y2-y1, len=Math.sqrt(dx*dx+dy*dy);
+      const nx=-dy/len*T/2, ny=dx/len*T/2;
+      const pts=[[x1+nx,y1+ny],[x2+nx,y2+ny],[x2-nx,y2-ny],[x1-nx,y1-ny]]
+        .map(p=>p.map(v=>+v.toFixed(2)).join(',')).join(' ');
+      return `<polygon points="${pts}" fill="${color}" opacity="0.95"/>
+              <circle cx="${(+x2).toFixed(2)}" cy="${(+y2).toFixed(2)}" r="${HR}" fill="#992222"/>`;
+    }
+
+    if (count === 0) {
+      return `<svg class="mbox-svg" width="${S}" height="${S}" viewBox="0 0 ${S} ${S}" xmlns="http://www.w3.org/2000/svg">
+        <rect x="1" y="1" width="${S-2}" height="${S-2}" rx="${S*.1}"
+          fill="none" stroke="rgba(232,228,220,0.08)" stroke-width="1.5" stroke-dasharray="4 3"/>
+      </svg>`;
+    }
+
+    let inner = '';
+    for (let i=0; i<count; i++) {
+      const [x1,y1,x2,y2] = STICKS[i];
+      inner += stick(x1,y1,x2,y2);
+    }
+
+    return `<svg class="mbox-svg" width="${S}" height="${S}" viewBox="0 0 ${S} ${S}" xmlns="http://www.w3.org/2000/svg">
+      <rect x="1" y="1" width="${S-2}" height="${S-2}" rx="${S*.1}" fill="rgba(0,0,0,0.25)"/>
+      ${inner}
+    </svg>`;
+  }
+
+  function buildCol(t, S) {
+    const sc      = scores[t];
+    const malas   = Math.min(sc, 15);
+    const buenas  = Math.max(0, sc - 15);
+    const nearWin = sc >= 25;
+    const dimmed  = sc < 15;
+    const label   = t === 'n' ? 'Nosotros' : 'Ellos';
+
+    function boxesHTML(pts) {
+      return Array.from({length:3}, (_,i) => {
+        const n = Math.max(0, Math.min(5, pts - i*5));
+        return buildBoxSVG(n, t, S);
+      }).join('');
+    }
+
+    const col = document.getElementById(`col-${t}`);
+    col.className = `team-col${nearWin ? ' near-win' : ''}`;
+    col.innerHTML = `
+      <div class="score-block">
+        <span class="team-label">${label}</span>
+        <span class="score-num" id="score-${t}">${sc}</span>
+      </div>
+      <span class="section-label">Malas</span>
+      <div class="matches-col">${boxesHTML(malas)}</div>
+      <span class="section-label${dimmed?' buenas-lbl-dim':''}">Buenas</span>
+      <div class="matches-col${dimmed?' buenas-dim':''}">${boxesHTML(buenas)}</div>
+    `;
+  }
+
+  function render() {
+    const S = getBoxSize();
+    buildCol('n', S);
+    buildCol('e', S);
+  }
+
+  function updateScore(t, d) {
+    const prev = scores[t];
+    const next = Math.max(0, Math.min(30, prev + d));
+    if (prev === next) return;
+    hist.push({ t, prev });
+    scores[t] = next;
+    render();
+    if (d > 0) animateAdd(t);
+    checkWinner();
+  }
+
+  function undoLast(t) {
+    const idx = hist.map((h,i)=>h.t===t?i:-1).filter(i=>i!==-1).pop();
+    if (idx !== undefined) {
+      scores[t] = hist[idx].prev;
+      hist.splice(idx, 1);
+      render();
+    }
+  }
+
+  function resetGame() {
+    scores = {n:0,e:0}; hist = [];
+    document.getElementById('winner-modal').classList.remove('show');
+    render();
+  }
+
+  function animateAdd(t) {
+    requestAnimationFrame(() => {
+      const num = document.getElementById(`score-${t}`);
+      const btn = document.getElementById(`btn-add-${t}`);
+      if (num) { num.classList.remove('pop'); void num.offsetWidth; num.classList.add('pop'); }
+      if (btn) { btn.classList.remove('scored'); void btn.offsetWidth; btn.classList.add('scored'); }
+      setTimeout(() => {
+        if (num) num.classList.remove('pop');
+        if (btn) btn.classList.remove('scored');
+      }, 350);
+    });
+  }
+
+  function checkWinner() {
+    if (scores.n < 30 && scores.e < 30) return;
+    const t = scores.n >= 30 ? 'n' : 'e';
+    document.getElementById('winner-title').textContent = '¡Ganaron!';
+    document.getElementById('winner-sub').textContent = t === 'n'
+      ? 'Nosotros somos los campeones' : 'Ellos se llevaron la victoria';
+    document.getElementById('winner-card').className = `modal-card winner-${t}`;
+    document.getElementById('btn-restart').className  = `btn-restart winner-${t}`;
+    document.getElementById('winner-modal').classList.add('show');
+  }
+
+  window.addEventListener('resize', render);
+  render();
+</script>
+</body>
+</html>

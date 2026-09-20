@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400&family=Manrope:wght@400;600;800&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@400,0..1&display=swap" rel="stylesheet"/>
 <style>
@@ -16,7 +16,8 @@
   }
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
   html,body{height:100%;overflow:hidden;}
-  body{background:var(--bg);color:var(--on-surface);font-family:'Manrope',sans-serif;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;}
+  body{background:var(--bg);color:var(--on-surface);font-family:'Manrope',sans-serif;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+  .controls, .btn-add, .btn-sec { touch-action: manipulation; }
 
   /* Header */
   header{position:fixed;top:0;left:0;right:0;z-index:50;height:var(--header-h);padding:var(--safe-top) .75rem 0;display:flex;align-items:center;justify-content:space-between;background:rgba(18,17,15,0.96);backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);border-bottom:1px solid var(--divider);gap:.25rem;}
@@ -42,7 +43,7 @@
   .score-block{display:flex;flex-direction:column;align-items:center;padding-bottom:.32rem;margin-bottom:.32rem;border-bottom:1px solid var(--divider);width:100%;flex-shrink:0;}
   .team-label{font-size:.56rem;font-weight:800;letter-spacing:.22em;text-transform:uppercase;}
   #col-n .team-label{color:var(--n-accent);opacity:.75;}#col-e .team-label{color:var(--e-accent);opacity:.75;}
-  .team-formation{font-size:.62rem;opacity:.45;margin-top:.1rem;}
+  .team-formation{font-size:.62rem;opacity:.45;margin-top:.1rem;width:100%;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 .25rem;}
   #col-n .team-formation{color:var(--n-accent);}#col-e .team-formation{color:var(--e-accent);}
   .score-num{font-family:'Noto Serif',serif;font-size:2.6rem;line-height:1;font-style:italic;transition:text-shadow .6s;}
   #col-n .score-num{color:var(--n-accent);}#col-e .score-num{color:var(--e-accent);}
@@ -306,6 +307,20 @@
   </div>
   <div class="players-list" id="players-list"></div>
   <button class="action-btn" id="btn-sortear" onclick="sortear()" disabled>Sortear equipos</button>
+  <button class="ghost-btn" onclick="toggleManualSetup()">Armar equipos manualmente</button>
+  <div id="manual-setup" style="display:none;flex-direction:column;gap:.75rem">
+    <div style="display:flex;gap:.75rem">
+      <div style="flex:1;display:flex;flex-direction:column;gap:.4rem">
+        <span style="font-size:.56rem;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--n-accent);opacity:.8">Nosotros</span>
+        <textarea id="manual-n" class="player-input" rows="2" placeholder="Ej: Juan, Ana" style="resize:none;line-height:1.5"></textarea>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:.4rem">
+        <span style="font-size:.56rem;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--e-accent);opacity:.8">Ellos</span>
+        <textarea id="manual-e" class="player-input" rows="2" placeholder="Ej: Pedro, Sol" style="resize:none;line-height:1.5"></textarea>
+      </div>
+    </div>
+    <button class="action-btn" onclick="useManualTeams()">Usar estos equipos →</button>
+  </div>
   <div class="result-block" id="result-block" style="display:none"></div>
 </div>
 
@@ -334,7 +349,7 @@
     <span class="modal-trophy">🏆</span>
     <h2 class="modal-title" id="winner-title">¡Ganaron!</h2>
     <p class="modal-sub" id="winner-sub"></p>
-    <button class="btn-restart" id="btn-restart" onclick="resetGame()">Reiniciar Partida</button>
+    <div id="winner-actions" style="display:flex;flex-direction:column;gap:.0rem;width:100%"></div>
   </div>
 </div>
 
@@ -442,16 +457,27 @@ function render(){const S=getBoxSize();buildCol('n',S);buildCol('e',S);}
 function updateScore(t,d){const prev=scores[t],next=Math.max(0,Math.min(30,prev+d));if(prev===next)return;hist.push({t,prev});scores[t]=next;render();if(d>0)animateAdd(t);checkWinner();}
 function undoLast(t){const idx=hist.map((h,i)=>h.t===t?i:-1).filter(i=>i!==-1).pop();if(idx!==undefined){scores[t]=hist[idx].prev;hist.splice(idx,1);render();}}
 function resetGame(){scores={n:0,e:0};hist=[];formation={n:'',e:''};document.getElementById('winner-modal').classList.remove('show');render();}
+function startRevancha(){
+  // Invertir equipos: los que perdieron ahora arrancan como "Nosotros"
+  const prev=formation;
+  formation={n:prev.e, e:prev.n};
+  scores={n:0,e:0}; hist=[];
+  document.getElementById('winner-modal').classList.remove('show');
+  render();
+}
 function animateAdd(t){requestAnimationFrame(()=>{const num=document.getElementById(`score-${t}`),btn=document.getElementById(`btn-add-${t}`);if(num){num.classList.remove('pop');void num.offsetWidth;num.classList.add('pop');}if(btn){btn.classList.remove('scored');void btn.offsetWidth;btn.classList.add('scored');}setTimeout(()=>{if(num)num.classList.remove('pop');if(btn)btn.classList.remove('scored');},350);});}
 function checkWinner(){
   if(scores.n<30&&scores.e<30)return;
   const t=scores.n>=30?'n':'e';
   saveToHistory(t);
-  document.getElementById('winner-title').textContent='¡Ganaron!';
-  document.getElementById('winner-sub').textContent=t==='n'?'Nosotros somos los campeones':'Ellos se llevaron la victoria';
-  document.getElementById('winner-card').className=`modal-card winner-${t}`;
-  document.getElementById('btn-restart').className=`btn-restart winner-${t}`;
+  document.getElementById('winner-title').textContent = t==='n' ? '¡Ganamos!' : '¡Ganaron!';
+  document.getElementById('winner-sub').textContent   = t==='n' ? 'Nosotros somos los campeones' : 'Ellos se llevaron la victoria';
+  document.getElementById('winner-card').className = `modal-card winner-${t}`;
   document.getElementById('winner-modal').classList.add('show');
+  // Botones del modal
+  document.getElementById('winner-actions').innerHTML = `
+    <button class="btn-restart winner-${t}" onclick="startRevancha()">Revancha</button>
+    <button class="btn-restart" style="background:rgba(232,228,220,0.12);margin-top:.5rem" onclick="resetGame()">Partido nuevo</button>`;
 }
 
 /* ═══════ HISTORIAL ═══════ */
@@ -533,6 +559,18 @@ function sortear(){
   rb.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 function openSetupFromSorteo(){goTo('score');setTimeout(openSetup,300);}
+function toggleManualSetup(){
+  const el=document.getElementById('manual-setup');
+  el.style.display=el.style.display==='none'?'flex':'none';
+}
+function useManualTeams(){
+  const n=document.getElementById('manual-n').value.trim();
+  const e=document.getElementById('manual-e').value.trim();
+  if(!n&&!e) return;
+  lastSorted=[{teamA:n.split(',').map(s=>s.trim()).filter(Boolean), teamB:e.split(',').map(s=>s.trim()).filter(Boolean)}];
+  formation={n,e};
+  goTo('score');
+}
 
 /* ═══════════════════════════════════
    TORNEOS

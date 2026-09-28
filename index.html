@@ -583,7 +583,7 @@ function useManualTeams(){
 //   playoff:{ matches:[{a,b,winner,round,label}] },
 //   champion, createdAt }
 
-let tournSetup={ step:0, name:'', teams:[], playersPerTeam:2, format:'playoff' };
+let tournSetup={ step:0, name:'', teams:[], playersPerTeam:2, format:'playoff', bo:1 };
 
 function saveTournament(){localStorage.setItem(SK.TOURN,JSON.stringify(tournament));}
 
@@ -635,6 +635,11 @@ function renderTournSetup(el){
         <button class="mode-btn" id="fmt-league" onclick="setTFmt('league')">Liga</button>
         <button class="mode-btn" id="fmt-lp" onclick="setTFmt('league+playoff')">Liga + Playoff</button>
       </div>
+      <span class="section-title">Partidos por serie</span>
+      <div class="mode-selector">
+        <button class="mode-btn active" id="tbo-1" onclick="setTBO(1)">Partido único</button>
+        <button class="mode-btn" id="tbo-3" onclick="setTBO(3)">Al mejor de 3</button>
+      </div>
       <span class="section-title">Jugadores por equipo</span>
       <div class="mode-selector">
         <button class="mode-btn active" id="tpp-2" onclick="setTPP(2)">2 jugadores</button>
@@ -645,6 +650,10 @@ function renderTournSetup(el){
   tournSetup={step:0,name:'',teams:[],playersPerTeam:2,format:'playoff'};
 }
 
+function setTBO(n){
+  tournSetup.bo=n;
+  [1,3].forEach(k=>document.getElementById(`tbo-${k}`)?.classList.toggle('active',k===n));
+}
 function fmtFormat(f){return f==='playoff'?'Eliminación directa':f==='league'?'Liga':f==='league+playoff'?'Liga + Playoff':f;}
 function setTFmt(f){tournSetup.format=f;['playoff','league','lp'].forEach(k=>document.getElementById(`fmt-${k}`)?.classList.toggle('active',`fmt-${k}`===`fmt-${f.replace('+','')}`||k===f.replace('league+playoff','lp')));}
 function setTPP(n){tournSetup.playersPerTeam=n;[2,3].forEach(k=>document.getElementById(`tpp-${k}`)?.classList.toggle('active',k===n));}
@@ -682,7 +691,7 @@ function startTournament(){
   const teams=tournSetup.teams.map(t=>({name:t.name}));
   const fmt=tournSetup.format;
   tournament={
-    name:tournSetup.name, format:fmt, teams, playersPerTeam:tournSetup.playersPerTeam,
+    name:tournSetup.name, format:fmt, teams, playersPerTeam:tournSetup.playersPerTeam, bo:tournSetup.bo,
     phase: (fmt==='league'||fmt==='league+playoff') ? 'league' : 'playoff',
     champion:null, createdAt:new Date().toISOString()
   };
@@ -692,12 +701,16 @@ function startTournament(){
 }
 
 /* ── LIGA ── */
+function newMatch(a,b){
+  const bo=tournament.bo||1;
+  return {a, b, winner:null, winsA:0, winsB:0, bo};
+}
+
 function buildLeague(){
-  // Round robin: every team vs every other
   const teams=tournament.teams, matches=[];
   for(let i=0;i<teams.length;i++)
     for(let j=i+1;j<teams.length;j++)
-      matches.push({a:teams[i].name, b:teams[j].name, winner:null});
+      matches.push(newMatch(teams[i].name, teams[j].name));
   tournament.league={matches};
 }
 
@@ -729,20 +742,25 @@ function renderLeague(el){
   standHTML+=`</tbody></table>`;
   if(fmt==='league+playoff'&&pending===0) standHTML+=`<p style="font-size:.65rem;color:var(--gold);opacity:.7;margin-top:.35rem">★ Top ${qualN} avanzan al playoff</p>`;
 
-  const matchHTML=matches.map((m,i)=>`
-    <div class="match-card${m.winner?' done':''}">
+  const need=Math.ceil((tournament.bo||1)/2);
+  const matchHTML=matches.map((m,i)=>{
+    const bo=m.bo||1, done=!!m.winner;
+    const subA=done?(m.winner===m.a?'✓ Ganó la serie':''):`${bo>1?m.winsA+' victorias · ':''}Tocá para sumar`;
+    const subB=done?(m.winner===m.b?'✓ Ganó la serie':''):`${bo>1?m.winsB+' victorias · ':''}Tocá para sumar`;
+    const scoreTag=bo>1?`<div style="font-size:.65rem;font-weight:800;letter-spacing:.08em;opacity:.5;padding:.3rem .75rem;border-top:1px solid var(--divider);display:flex;justify-content:space-between;align-items:center"><span>${m.winsA} – ${m.winsB}</span><span>${done?'Serie terminada':`Al mejor de ${bo}`}${done?` <button onclick="resetLeagueMatch(${i})" style="background:none;border:none;color:rgba(232,228,220,.35);font-size:.65rem;cursor:pointer;font-family:Manrope,sans-serif;margin-left:.5rem">↺ Resetear</button>`:''}</span></div>`:'';
+    return`<div class="match-card${done?' done':''}">
       <div class="match-teams">
-        <div class="match-team${m.winner===m.a?' winner-team':''}" onclick="setLeagueWinner(${i},'${m.a}')">
+        <div class="match-team${m.winner===m.a?' winner-team':''}" onclick="${!done?`setLeagueWinner(${i},'${m.a}')`:''}"}>
           <span class="match-team-name">${m.a}</span>
-          ${m.winner===m.a?`<span class="match-winner-badge">✓ Ganó</span>`:'<span class="match-team-sub">Tocá para marcar</span>'}
+          <span class="match-team-sub">${subA}</span>
         </div>
         <div class="match-vs">VS</div>
-        <div class="match-team${m.winner===m.b?' winner-team':''}" onclick="setLeagueWinner(${i},'${m.b}')">
+        <div class="match-team${m.winner===m.b?' winner-team':''}" onclick="${!done?`setLeagueWinner(${i},'${m.b}')`:''}"}>
           <span class="match-team-name">${m.b}</span>
-          ${m.winner===m.b?`<span class="match-winner-badge">✓ Ganó</span>`:'<span class="match-team-sub">Tocá para marcar</span>'}
+          <span class="match-team-sub">${subB}</span>
         </div>
-      </div>
-    </div>`).join('');
+      </div>${scoreTag}</div>`;
+  }).join('');
 
   let actionHTML='';
   if(pending===0){
@@ -760,8 +778,18 @@ function renderLeague(el){
     <button class="ghost-btn" style="margin-top:.5rem" onclick="abandonTourn()">Abandonar torneo</button>`;
 }
 
-function setLeagueWinner(idx,winner){
-  tournament.league.matches[idx].winner=winner;
+function setLeagueWinner(idx, team){
+  const m=tournament.league.matches[idx];
+  if(m.winner) return; // serie cerrada
+  if(team===m.a) m.winsA++; else m.winsB++;
+  const need=Math.ceil((m.bo||1)/2);
+  if(m.winsA>=need) m.winner=m.a;
+  else if(m.winsB>=need) m.winner=m.b;
+  saveTournament(); renderTourn();
+}
+function resetLeagueMatch(idx){
+  const m=tournament.league.matches[idx];
+  m.winsA=0; m.winsB=0; m.winner=null;
   saveTournament(); renderTourn();
 }
 
@@ -789,12 +817,12 @@ function buildPlayoff(teamList){
   while(padded.length<n) padded.push({name:'BYE',bye:true});
   // Shuffle seeding
   const seeded=shuffle(padded);
-  // Build first round matches
   const matches=[];
   for(let i=0;i<n;i+=2){
     const a=seeded[i],b=seeded[i+1];
+    const isBye=a.bye||b.bye;
     const winner=a.bye?b.name:b.bye?a.name:null;
-    matches.push({a:a.name,b:b.name,winner,round:0,isBye:a.bye||b.bye});
+    matches.push({a:a.name,b:b.name,winner,winsA:0,winsB:0,bo:isBye?1:(tournament.bo||1),round:0,isBye});
   }
   tournament.playoff={matches,totalRounds:Math.log2(n)};
   // Auto-advance byes
@@ -822,7 +850,7 @@ function advancePlayoff(){
         const winners=cur.map(m=>m.winner);
         for(let i=0;i<winners.length;i+=2){
           if(winners[i+1]===undefined) break;
-          tournament.playoff.matches.push({a:winners[i],b:winners[i+1],winner:null,round:r+1,isBye:false});
+          tournament.playoff.matches.push({a:winners[i],b:winners[i+1],winner:null,winsA:0,winsB:0,bo:tournament.bo||1,round:r+1,isBye:false});
         }
       }
     }
@@ -851,18 +879,22 @@ function renderPlayoff(el){
         html+=`<div class="match-card done"><div style="padding:.65rem 1rem;font-size:.8rem;opacity:.5">${m.winner} avanza (bye)</div></div>`;
         return;
       }
-      html+=`<div class="match-card${m.winner?' done':''}">
+      const bo=m.bo||1, done=!!m.winner;
+      const subA=done?(m.winner===m.a?'✓ Ganó la serie':''):`${bo>1?m.winsA+' victorias · ':''}Tocá para sumar`;
+      const subB=done?(m.winner===m.b?'✓ Ganó la serie':''):`${bo>1?m.winsB+' victorias · ':''}Tocá para sumar`;
+      const scoreTag=bo>1?`<div style="font-size:.65rem;font-weight:800;letter-spacing:.08em;opacity:.5;padding:.3rem .75rem;border-top:1px solid var(--divider)">${m.winsA} – ${m.winsB} · ${done?'Serie terminada':`Al mejor de ${bo}`}</div>`:'';
+      html+=`<div class="match-card${done?' done':''}">
         <div class="match-teams">
-          <div class="match-team${m.winner===m.a?' winner-team':''}" onclick="${!m.winner?`setPlayoffWinner(${globalIdx},'${m.a}')`:''}"}>
+          <div class="match-team${m.winner===m.a?' winner-team':''}" onclick="${!done?`setPlayoffWinner(${globalIdx},'${m.a}')`:''}"}>
             <span class="match-team-name">${m.a}</span>
-            ${m.winner===m.a?`<span class="match-winner-badge">✓ Ganó</span>`:m.winner?'':m.a==='TBD'?'':'<span class="match-team-sub">Tocá para marcar</span>'}
+            <span class="match-team-sub">${subA}</span>
           </div>
           <div class="match-vs">VS</div>
-          <div class="match-team${m.winner===m.b?' winner-team':''}" onclick="${!m.winner?`setPlayoffWinner(${globalIdx},'${m.b}')`:''}"}>
+          <div class="match-team${m.winner===m.b?' winner-team':''}" onclick="${!done?`setPlayoffWinner(${globalIdx},'${m.b}')`:''}"}>
             <span class="match-team-name">${m.b}</span>
-            ${m.winner===m.b?`<span class="match-winner-badge">✓ Ganó</span>`:m.winner?'':m.b==='TBD'?'':'<span class="match-team-sub">Tocá para marcar</span>'}
+            <span class="match-team-sub">${subB}</span>
           </div>
-        </div>
+        </div>${scoreTag}
       </div>`;
     });
   });
@@ -870,8 +902,13 @@ function renderPlayoff(el){
   el.innerHTML=html+`<button class="ghost-btn" style="margin-top:.5rem" onclick="abandonTourn()">Abandonar torneo</button>`;
 }
 
-function setPlayoffWinner(idx,winner){
-  tournament.playoff.matches[idx].winner=winner;
+function setPlayoffWinner(idx, team){
+  const m=tournament.playoff.matches[idx];
+  if(m.winner) return;
+  if(team===m.a) m.winsA++; else m.winsB++;
+  const need=Math.ceil((m.bo||1)/2);
+  if(m.winsA>=need) m.winner=m.a;
+  else if(m.winsB>=need) m.winner=m.b;
   advancePlayoff();
   // Check if final is done
   const total=tournament.playoff.totalRounds;
